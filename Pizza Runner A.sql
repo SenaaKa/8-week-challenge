@@ -122,7 +122,58 @@ group by deys
 
 
 
+--How many runners signed up for each 1 week period? (i.e. week starts 2021-01-01)
+select weeks, count(weeks) from (select extract(week from registration_date+3) as weeks from runners r) k
+group by weeks
 
+
+
+--What was the average time in minutes it took for each runner to arrive at the Pizza Runner HQ to pickup the order?
+select avg(pickup_time::timestamp - order_time) from (select * from co_fixed cf
+left join ro_fixed rf  on cf.order_id=rf.order_id) k
+
+
+
+
+
+
+--Is there any relationship between the number of pizzas and how long the order takes to prepare?
+select *, difference/volume as average from (select count(order_id) as volume, (pickup_time::timestamp-order_time) as difference from (select cf.order_id, order_time, pickup_time from co_fixed cf
+left join ro_fixed rf on rf.order_id=cf.order_id) k
+group by difference) k
+--There is no realtionship between the number of pizzas and how long the order takes to prepare.
+
+
+
+
+
+--What was the average distance travelled for each customer?
+select customer_id, avg(distance) average from co_fixed cf 
+left join ro_fixed rf on rf.order_id=cf.order_id 
+group by customer_id
+
+
+
+
+--What was the difference between the longest and shortest delivery times for all orders?
+select min(duration), max(duration)  from ro_fixed rf 
+
+
+
+
+--What was the average speed for each runner for each delivery and do you notice any trend for these values?
+select order_id, distance/duration*60 from ro_fixed rf 
+
+
+
+--What is the successful delivery percentage for each runner?
+select runner_id,(sum(distance)::float/count(distance)::float*100) as percentage from (select runner_id, 
+case 
+	when distance is not null then 1
+	when distance is null then 0
+end
+distance from ro_fixed rf) k
+group by runner_id 
 
 
 
