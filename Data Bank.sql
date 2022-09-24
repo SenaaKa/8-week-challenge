@@ -1,28 +1,26 @@
+
 --How many unique nodes are there on the Data Bank system?
 select count(distinct node_id) from customer_nodes cn 
 
-
+select * from customer_nodes cn 
 
 --What is the number of nodes per region?
-select r.region_id, region_name, count(r.region_id) from customer_nodes cn 
-join regions r on r.region_id =cn.region_id 
-group by region_name, r.region_id 
-order by region_id 
+select region_id , count(distinct node_id) from customer_nodes cn 
+group by region_id ;
 
 
 
 
 --How many customers are allocated to each region?
-select region_id, count(region_id) from customer_nodes cn 
+select region_id,count(distinct customer_id)  from customer_nodes cn 
 group by region_id 
-order by region_id 
+
 
 
 --How many days on average are customers reallocated to a different node?
-select customer_id, region_id, node_id, start_date, end_date, end_date-start_date as different from customer_nodes cn 
+select  avg(end_date-start_date) as different from customer_nodes cn 
 where end_date != '9999-12-31'
-order by customer_id, node_id
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
 
 
 --What is the median, 80th and 95th percentile for this same reallocation days metric for each region?
@@ -31,7 +29,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 
 --What is the unique count and total amount for each transaction type?
-select txn_type, count(txn_amount), sum(txn_amount) from customer_transactions ct 
+select txn_type, count(distinct txn_amount), sum(txn_amount) from customer_transactions ct 
 group by txn_type 
 
 
