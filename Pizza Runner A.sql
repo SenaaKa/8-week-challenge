@@ -1,4 +1,3 @@
-
 create table co_fixed as select order_id,customer_id,pizza_id,order_time,
 case 
 	when exclusions like 'null' then null 
@@ -178,6 +177,178 @@ group by runner_id
 
 
 
+select * from (select runner_id, 
+case 
+	when distance is not null then 1
+	when distance is null then 0
+end
+distance from ro_fixed rf) k
+
+
+
+
+
+
+
+
+
+
+--What are the standard ingredients for each pizza?
+select pizza_name, array_to_string(array_agg(topping_name), ',') from (select * from (select pizza_id, unnest(string_to_array(toppings, ', '))::int as toppings from pizza_recipes pr) k
+left join pizza_toppings pt on pt.topping_id=k.toppings
+left join pizza_names pn on pn.pizza_id=k.pizza_id) k
+group by pizza_name
+
+
+
+
+--What was the most commonly added extra?   --1.çözüm
+select topping_name, volume from (select topping_name, count(topping_name) as volume from (select pizza_id,unnest(string_to_array(extras, ', '))::int as extras from co_fixed cf) k
+left join pizza_toppings pt on k.extras=pt.topping_id 
+group by topping_name) k
+where volume = (select max(volume) from (select topping_name, count(topping_name) as volume from (select pizza_id,unnest(string_to_array(extras, ', '))::int as extras from co_fixed cf) k
+left join pizza_toppings pt on k.extras=pt.topping_id 
+group by topping_name) k)
+
+
+--2.çözüm
+select topping_name, volume from (select topping_name, volume, dense_rank()over(order by volume desc) as dr from (select topping_name, count(topping_name) as volume from (select pizza_id,unnest(string_to_array(extras, ', '))::int as extras from co_fixed cf) k
+left join pizza_toppings pt on k.extras=pt.topping_id 
+group by topping_name) k) k
+where dr = 1 
+
+
+
+
+
+
+--What was the most common exclusion?
+select * from (select topping_name, volume, dense_rank()over(order by volume desc) as dr from (select pt.topping_name, count(pt.topping_name) as volume from (select pizza_id, unnest(string_to_array(exclusions, ','))::int as exclusions from co_fixed cf) k
+left join pizza_toppings pt on k.exclusions=pt.topping_id 
+group by pt.topping_name) k) k
+where dr = 1
+
+
+
+
+
+
+
+/*Generate an order item for each record in the customers_orders table in the format of one of the following:
+Meat Lovers
+Meat Lovers - Exclude Beef
+Meat Lovers - Extra Bacon
+Meat Lovers - Exclude Cheese, Bacon - Extra Mushroom, Peppers*/
+select order_id,
+exclusions,
+extras,
+pizza_name, 
+case 
+	when pizza_name like 'Meatlovers' then 'Meat lovers'
+	when pizza_name like 'Meatlovers' and exclusions like '%3%' then 'Meat Lovers - Exclude Beef'
+	else pizza_name 
+end
+from co_fixed cf 
+join pizza_names pn on pn.pizza_id=cf.pizza_id
+
+
+
+
+/*Generate an order item for each record in the customers_orders table in the format of one of the following:
+Meat Lovers
+Meat Lovers - Exclude Beef
+Meat Lovers - Extra Bacon
+Meat Lovers - Exclude Cheese, Bacon - Extra Mushroom, Peppers 
+SOL 2  */ 
+
+select order_id, concat(pizza_name,'- Exclude ' ,exclusions, '- Extras ', extras) from (
+select
+	order_id,
+	pizza_name,
+	array_to_string(array_agg(exclusions),',  ') exclusions ,
+	array_to_string(array_agg(extras),',  ') extras
+from (select
+	distinct
+	order_id ,
+	pizza_id,
+	pt.topping_name exclusions,
+	pt2.topping_name extras
+from
+	(
+	select
+		cf.order_id ,
+		cf.pizza_id ,
+		k.exclusions::int ,
+		k.extras::int
+	from
+		co_fixed cf
+left join (
+select
+	order_id,
+	pizza_id,
+	unnest(string_to_array(exclusions,', ')) exclusions ,
+	unnest(string_to_array(extras,', ')) extras 
+from
+	co_fixed cf) k on k.order_id = cf.order_id 
+) k
+left join pizza_toppings pt on pt.topping_id = k.exclusions
+left join pizza_toppings pt2 on pt2.topping_id = k.extras
+order by order_id 
+) k
+left join pizza_names pn on pn.pizza_id = k.pizza_id
+group by order_id,pizza_name
+) k
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*Generate an alphabetically ordered comma separated ingredient list for each pizza order 
+from the customer_orders table and add a 2x in front of any relevant ingredients
+For example: "Meat Lovers: 2xBacon, Beef, ... , Salami"*/
+
+
+select order_id, concat(pizza_name, ':', ' ', topping_name) from (
+select order_id,pizza_name, array_to_string(array_agg(topping_name), ', ') topping_name from (
+select order_id, pizza_name, topping_name from (
+select
+	order_id,
+	cf.pizza_id,
+	unnest(string_to_array(toppings, ', '))::int toppings
+from
+	co_fixed cf
+left join pizza_recipes pr on
+	pr.pizza_id = cf.pizza_id
+) k
+left join pizza_toppings pt on pt.topping_id=k.toppings
+left join pizza_names pn on pn.pizza_id=k.pizza_id	
+order by topping_name	
+) k
+group by order_id, pizza_name
+order by order_id, pizza_name	
+) k	
+	
+	
+	
+--aynı olanları ayır parantez içinde bana tüyo da ver. ac parantezi siparişlere başlamadan numara ver kapa parantezi. başka tüyo yok.
+	
+	
+	select *, row_number() over(partition by order_id order by order_id) from co_fixed cf 
+	
+	
+
+What is the total quantity of each ingredient used in all delivered pizzas sorted by most frequent first?
 
 
 
