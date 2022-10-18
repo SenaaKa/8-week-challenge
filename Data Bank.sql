@@ -24,7 +24,10 @@ where end_date != '9999-12-31'
 
 
 --What is the median, 80th and 95th percentile for this same reallocation days metric for each region?
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+select txn_date, PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY txn_amount) AS median, PERCENTILE_CONT(0.8) WITHIN GROUP (ORDER BY txn_amount) AS "80th_percentile", PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY txn_amount) AS "95th_percentile" from customer_transactions ct 
+where txn_date in (select start_date from customer_nodes cn)
+group by txn_date 
+
 
 
 
@@ -41,7 +44,8 @@ group by customer_id
 order by customer_id 
 
 
-For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 withdrawal in a single month?
+--For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 withdrawal in a single month?
+
 What is the closing balance for each customer at the end of the month?
 What is the percentage of customers who increase their closing balance by more than 5%?
 
