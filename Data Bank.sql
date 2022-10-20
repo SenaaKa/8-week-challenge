@@ -31,6 +31,8 @@ group by txn_date
 
 
 
+
+
 --What is the unique count and total amount for each transaction type?
 select txn_type, count(distinct txn_amount), sum(txn_amount) from customer_transactions ct 
 group by txn_type 
@@ -45,13 +47,57 @@ order by customer_id
 
 
 --For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 withdrawal in a single month?
-
-What is the closing balance for each customer at the end of the month?
-What is the percentage of customers who increase their closing balance by more than 5%?
-
-
+select  extract(month from txn_date) as "month",txn_type,count(customer_id) as total_cust  from  customer_transactions ct 
+group by txn_type, "month"
+order by "month" 
 
 
+
+--What is the closing balance for each customer at the end of the month?
+select customer_id,"month",sum("values") as closing_balance from (select case 
+	when txn_type='withdrawal' or txn_type='purchase' then (-txn_amount)
+	else txn_amount
+end as "values" 
+,extract(month from txn_date) as "month", customer_id,txn_type,txn_amount FROM customer_transactions)k 
+group by "month", customer_id
+order by customer_id, "month"
+
+
+
+
+
+
+--What is the percentage of customers who increase their closing balance by more than 5%?
+select * from (select customer_id, sum(case
+	when txn_type = 'withdrawal' or txn_type= 'purchase' then (-txn_amount)
+	else txn_amount 
+end) closing_balance 
+ from customer_transactions ct 
+group by customer_id) k
+where closing_balance > (select avg(closing_balance) from (select customer_id, sum(case
+	when txn_type = 'withdrawal' or txn_type= 'purchase' then (-txn_amount)
+	else txn_amount 
+end) closing_balance 
+ from customer_transactions ct 
+group by customer_id) k)
+order by customer_id 
+
+
+
+
+select * from (select customer_id, sum(case
+	when txn_type = 'withdrawal' or txn_type= 'purchase' then (-txn_amount)
+	else txn_amount 
+end) closing_balance 
+ from customer_transactions ct 
+group by customer_id) k
+where closing_balance > (select percentile_cont(0.05) within group (order by closing_balance) as cs from (select customer_id, sum(case
+	when txn_type = 'withdrawal' or txn_type= 'purchase' then (-txn_amount)
+	else txn_amount 
+end) closing_balance 
+ from customer_transactions ct 
+group by customer_id) k)
+order by customer_id
 
 
 
