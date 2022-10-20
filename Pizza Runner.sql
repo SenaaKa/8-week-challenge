@@ -337,19 +337,10 @@ order by topping_name
 ) k
 group by order_id, pizza_name
 order by order_id, pizza_name	
-) k	
+) k
 	
 	
 	
---aynı olanları ayır parantez içinde bana tüyo da ver. ac parantezi siparişlere başlamadan numara ver kapa parantezi. başka tüyo yok.
-	
-	
-	select *, row_number() over(partition by order_id order by order_id) from co_fixed cf 
-	
-	
-
-What is the total quantity of each ingredient used in all delivered pizzas sorted by most frequent first?
-
 
 
 
