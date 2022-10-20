@@ -25,7 +25,7 @@ sales,
   round((sales::numeric/transactions),2) as avg_transaction
   from weekly_sales)
 
-select * from clean_weekly_sales cws 
+
   
   
   
